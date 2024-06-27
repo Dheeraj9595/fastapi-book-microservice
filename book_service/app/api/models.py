@@ -13,6 +13,7 @@ class BookIn(BaseModel):
 
 
 class BookOut(BookIn):
+    book_id: int
     authors: List[str] = None
 
 class BookUpdate(BookIn):

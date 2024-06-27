@@ -9,17 +9,6 @@ from .models import BookIn, BookOut, BookUpdate
 books = APIRouter()
 
 
-# @books.get("/", response_model=List[BookOut], status_code=200)
-# async def list_book() -> dict:
-#     """
-#     Fetch all books
-#     """
-#     return await db_manager.get_all_books()
-
-# db_manager = {
-#     "get_all_books": db_manager.get_all_books,
-# }
-
 @books.get("/", response_model=List[BookOut], status_code=200)
 async def list_book():
     """
@@ -45,8 +34,10 @@ async def list_book():
 
     for book in books:
         book_dict = dict(book)
+        book_id = book_dict.pop("id")
         authors = [author_details[author_id] for author_id in book_dict["authors_id"]]
         book_dict["authors"] = authors
+        book_dict["book_id"] = book_id
         book_list.append(book_dict)
 
     return book_list
