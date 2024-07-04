@@ -5,6 +5,9 @@ from .service import fetch_author
 from . import db_manager
 from .service import is_author_present
 from .models import BookIn, BookOut, BookUpdate
+from .database import s3_client, S3_BUCKET
+import json
+from .db_manager import upload_to_s3
 
 books = APIRouter()
 
@@ -65,7 +68,12 @@ async def create_book(payload: BookIn):
                 detail=f"Author with id:{author_id} not found")
 
     book_id = await db_manager.add_book(payload)
-    response = {"id": book_id, **payload.dict()}
+    response = {"book_id": book_id, **payload.dict()}
+
+    # Convert the response to JSON string and upload to S3
+    json_data = json.dumps(response)
+    file_name = f'books/{book_id}.json'
+    upload_to_s3(S3_BUCKET, file_name, json_data)
     return response
 
 
@@ -91,7 +99,14 @@ async def update_book(book_id: int, payload: BookUpdate):
     update_book = book_id_db.copy(update=update_data)
     await db_manager.update_book(book_id, update_book)
     updated_book = await db_manager.get_book(book_id)
-    return updated_book
+
+    # Convert the database response to the output model
+    updated_book_dict = dict(updated_book)
+    updated_book_dict["book_id"] = updated_book_dict.pop("id")
+    updated_book_dict["authors"] = [
+        "Author Name Placeholder" for _ in updated_book_dict["authors_id"]
+    ]  # Replace with actual author names if needed
+    return updated_book_dict
 
 
 @books.delete("/delete/{book_id}/", response_model=None)
@@ -99,4 +114,5 @@ async def delete_book(book_id: int):
     book = await db_manager.get_book(book_id)
     if not book:
         HTTPException(status_code=404, detail="Book not found")
-    return await db_manager.delete_book(book_id)
+    await db_manager.delete_book(book_id)
+    return {"detail": "Book deleted successfully"}
