@@ -36,7 +36,7 @@ make docker-compose-up
 ## Documentation sur l'API
 
 - Endpoint authors
-```
+``` 
 http://localhost:8080/api/v1/authors/docs
 ```
 - Endpoint books
